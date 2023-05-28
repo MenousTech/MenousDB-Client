@@ -6,30 +6,23 @@ import json
 import os
 import sys
 from auth import *
+import requests
+
 app = Flask(__name__)
-app.config["SESSION_PERMANENT"] = True
+app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-API_URL = "http://127.0.0.1:5555/"
+API_URL = "http://192.168.0.5:5555/"
+
 
 def Login(username, password):
-    Path = "/Library/Caches/.menousdb/authdata"
-    if not os.path.exists(Path):
-        os.mkdir(Path)
-    if not os.path.exists(Path + "/keys.json"):
-        with open(Path + "/login.json", 'w') as file:
-            json.dump([],file)
-    if not os.path.exists(Path + "/login.json"):
-        with open(Path + "/login.json", 'w') as file:
-            json.dump({},file)
-        return 'Sign Up Required! Please contact Administrator'
-    with open(Path + "/login.json", 'r') as file:
-        data = json.load(file)
-        for i in data:
-            if i == username and data[i][0] == password:
-                return True
-        return False
+    HEADERS={
+        "username":username,
+        "password":password
+    }
+    req = requests.get(API_URL + "check-login", headers=HEADERS)
+    return req.text
     
 
 def getUserKey(username):
@@ -64,9 +57,10 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
     
-        if Login(username, password) == True:
+        if Login(username, password) != "Incorrect":
             session['logStatus'] = True
-            session['key'] = getUserKey(username)
+            print("Important", Login(username, password))
+            session['key'] = Login(username, password)
             return redirect('/')
         elif Login(username, password) == False:
             return render_template('login.html', loggFail=True)
@@ -83,12 +77,15 @@ def indexmain():
 @login_required
 def homePage():
     if request.method == 'GET':
+        print(session['key'])
         db = MenousDB(
         API_URL,
         session["key"],
-        'test'
+        'GoatInfo'
     )
-        return render_template('index.html',databases=db.get_databases())
+        dbs = db.get_databases()
+        print("Hello Debug",session['key'],dbs)
+        return render_template('index.html',databases=dbs)
     elif request.method == "POST":
         database = request.form.get("database_name").replace(" ", "_")
         db = MenousDB(
