@@ -13,7 +13,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-API_URL = "http://192.168.0.5:5555/"
+API_URL = "http://localhost:5001/"
 
 
 def Login(username, password):
